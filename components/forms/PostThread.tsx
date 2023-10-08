@@ -1,43 +1,36 @@
 'use client';
+
+import { useOrganization } from '@clerk/nextjs';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { usePathname, useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+
 import { Button } from '@/components/ui/button';
 import {
 	Form,
 	FormControl,
-	FormDescription,
 	FormField,
 	FormItem,
 	FormLabel,
 	FormMessage,
 } from '@/components/ui/form';
-
 import { Textarea } from '@/components/ui/textarea';
-import { createThread } from '@/lib/actions/thread.actions';
 
-// import { updateUser } from '@/lib/actions/user.actions';
+import { createThread } from '@/lib/actions/thread.actions';
 import { ThreadValidation } from '@/lib/validations/thread';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { usePathname, useRouter } from 'next/navigation';
-import path from 'path';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
 
 interface Props {
-	user: {
-		id: string;
-		objectId: string;
-		username: string;
-		name: string;
-		bio: string;
-		image: string;
-	};
-	btnTitle: string;
+	userId: string;
 }
 
-function PostThread({ userId }: { userId: string }) {
+function PostThread({ userId }: Props) {
 	const router = useRouter();
 	const pathname = usePathname();
 
-	const form = useForm({
+	const { organization } = useOrganization();
+
+	const form = useForm<z.infer<typeof ThreadValidation>>({
 		resolver: zodResolver(ThreadValidation),
 		defaultValues: {
 			thread: '',
@@ -49,7 +42,7 @@ function PostThread({ userId }: { userId: string }) {
 		await createThread({
 			text: values.thread,
 			author: userId,
-			communityId: null,
+			communityId: organization ? organization.id : null,
 			path: pathname,
 		});
 
@@ -59,18 +52,18 @@ function PostThread({ userId }: { userId: string }) {
 	return (
 		<Form {...form}>
 			<form
+				className="mt-10 flex flex-col justify-start gap-10"
 				onSubmit={form.handleSubmit(onSubmit)}
-				className="flex flex-col justify-start gap-10"
 			>
 				<FormField
 					control={form.control}
 					name="thread"
 					render={({ field }) => (
-						<FormItem className="flex flex-col w-full gap-3">
+						<FormItem className="flex w-full flex-col gap-3">
 							<FormLabel className="text-base-semibold text-light-2">
 								Content
 							</FormLabel>
-							<FormControl className="no-focus borde border-dark-4 bg-dark-3 text-light-1">
+							<FormControl className="no-focus border border-dark-4 bg-dark-3 text-light-1">
 								<Textarea rows={15} {...field} />
 							</FormControl>
 							<FormMessage />
